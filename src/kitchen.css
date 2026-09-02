@@ -1,0 +1,42 @@
+.kitchen-button{position:relative;display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--red);color:#fff;padding:10px 13px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,.25)}
+.kitchen-button:hover{transform:translate(-1px,-1px)}
+.kitchen-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:99px;background:var(--mustard);color:#201d15;font-size:12px}
+.kitchen-toast{position:fixed;right:22px;top:88px;z-index:60;display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--red);color:#fff;border:3px solid var(--ink);box-shadow:5px 5px 0 rgba(0,0,0,.35);font-size:14px;animation:kitchen-toast-in .25s ease-out}
+@keyframes kitchen-toast-in{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.kitchen-backdrop{align-items:stretch;padding:18px;background:rgba(0,0,0,.72)}
+.kitchen-modal{width:min(1280px,100%);height:min(900px,100%);margin:auto;background:var(--paper);border:3px solid var(--ink);box-shadow:9px 10px 0 rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column}
+.kitchen-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 22px;border-bottom:3px solid var(--ink);background:var(--header-bg)}
+.kitchen-heading h2{display:flex;align-items:center;gap:9px;margin:3px 0 0;font-family:'Fugaz One',sans-serif;font-size:28px;letter-spacing:.04em}
+.kitchen-heading-stats{display:flex;align-items:center;gap:12px;font-size:12px;text-transform:uppercase}
+.kitchen-heading-stats>span{padding:8px 10px;background:var(--mustard);color:#201d15;font-weight:800}
+.kitchen-heading-stats>strong{padding:8px 10px;border:2px solid var(--ink)}
+.kitchen-heading-stats .modal-close{position:static}
+.kitchen-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);min-height:0;flex:1}
+.kitchen-orders{min-width:0;overflow:auto;padding:18px}
+.ingredient-board{min-width:0;overflow:auto;padding:18px;border-left:3px solid var(--ink);background:color-mix(in srgb,var(--aqua) 8%,var(--paper))}
+.kitchen-subheading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px;text-transform:uppercase}
+.kitchen-subheading span{font-family:'Fugaz One',sans-serif;font-size:19px}
+.kitchen-subheading small{color:var(--muted);font-size:10px}
+.kitchen-ticket{background:var(--paper);border:2px solid var(--ink);margin-bottom:14px;padding:14px;box-shadow:4px 4px 0 rgba(0,0,0,.18)}
+.kitchen-ticket-head,.kitchen-ticket-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kitchen-ticket-head{padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.kitchen-ticket-head strong{font-family:'Fugaz One',sans-serif;font-size:22px}
+.kitchen-ticket-head span{color:var(--muted);font-size:11px}
+.kitchen-ticket-items{padding:10px 0}
+.kitchen-ticket-items>div{display:flex;justify-content:space-between;gap:15px;padding:5px 0;font-size:12px}
+.kitchen-ticket-foot{border-top:1px dashed var(--line);padding-top:10px}
+.kitchen-ticket-foot>strong{font-size:16px}
+.kitchen-ticket-foot>div{display:flex;gap:7px}
+.kitchen-ticket-foot button{border:2px solid var(--ink);background:var(--field-bg);color:var(--ink);padding:7px 10px;cursor:pointer;font-size:11px;font-weight:800;text-transform:uppercase}
+.kitchen-ticket-foot button:disabled{opacity:.5;cursor:default}
+.kitchen-ticket-foot .ready-button{background:var(--green);color:#fff}
+.ingredient-list{border-top:2px solid var(--ink)}
+.ingredient-list>div{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px dashed var(--line);font-size:12px}
+.ingredient-list strong{min-width:34px;text-align:center;padding:2px 7px;background:var(--mustard);color:#201d15}
+.kitchen-empty,.ingredient-empty{padding:38px 18px;text-align:center;color:var(--muted);border:2px dashed var(--line)}
+.kitchen-empty svg{margin-bottom:8px;color:var(--aqua)}
+.kitchen-empty strong{display:block;color:var(--ink);margin-bottom:5px}
+.kitchen-empty p{margin:0;font-size:12px}
+.order-error{margin:8px 0 0}
+@media(max-width:900px){.kitchen-backdrop{padding:8px}.kitchen-grid{grid-template-columns:1fr}.ingredient-board{border-left:0;border-top:3px solid var(--ink);max-height:35vh}.kitchen-heading{align-items:flex-start;flex-direction:column}.kitchen-heading-stats{width:100%;flex-wrap:wrap}.kitchen-heading-stats .modal-close{margin-left:auto}.kitchen-toast{left:12px;right:12px;top:75px}.kitchen-button{padding:10px}}
+@media(max-width:650px){.kitchen-heading h2{font-size:22px}.kitchen-ticket-foot{align-items:flex-start;flex-direction:column}.kitchen-ticket-foot>div{width:100%}.kitchen-ticket-foot button{flex:1}.kitchen-heading-stats>strong{font-size:10px}}
