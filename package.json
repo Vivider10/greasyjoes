@@ -4,15 +4,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build"
+    "build": "vite build",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@netlify/database": "2.0.0",
     "@tailwindcss/vite": "4.2.2",
     "@tanstack/react-router": "1.168.22",
     "@tanstack/react-start": "1.167.41",
     "@tanstack/react-store": "0.10.0",
     "@tanstack/router-plugin": "1.167.22",
     "@tanstack/store": "0.10.0",
+    "drizzle-orm": "1.0.0-beta.22",
     "lucide-react": "0.576.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -26,6 +29,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "5.2.0",
+    "drizzle-kit": "1.0.0-beta.22",
     "lucide-react": "0.576.0",
     "tailwindcss": "4.2.2",
     "typescript": "5.9.3",
