@@ -1,6 +1,13 @@
 [build]
   command = "vite build"
   publish = "dist/client"
+
+[build.environment]
+  PNPM_FLAGS = "--no-frozen-lockfile"
+
+[functions]
+  directory = "netlify/functions"
+
 [dev]
   command = "npm run dev"
   targetPort = 3000
