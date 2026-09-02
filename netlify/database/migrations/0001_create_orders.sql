@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS orders (
   subtotal NUMERIC(10, 2) NOT NULL,
   discount NUMERIC(10, 2) NOT NULL DEFAULT 0,
   total NUMERIC(10, 2) NOT NULL,
-  first_responder TEXT NOT NULL DEFAULT 'false',
+  first_responder BOOLEAN NOT NULL DEFAULT FALSE,
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
