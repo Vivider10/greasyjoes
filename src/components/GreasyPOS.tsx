@@ -95,6 +95,7 @@ export default function GreasyPOS() {
   const [customError, setCustomError] = useState('')
   const [darkMode, setDarkMode] = useState(true)
   const [orderComplete, setOrderComplete] = useState(false)
+  const [showIngredients, setShowIngredients] = useState(false)
   const [currentOrderNumber, setCurrentOrderNumber] = useState('')
   const [orderError, setOrderError] = useState('')
   const [ingredientList, setIngredientList] = useState<Array<[string, number]>>([])
@@ -135,6 +136,7 @@ export default function GreasyPOS() {
 
   const resetCompletedOrder = () => {
     setOrderComplete(false)
+    setShowIngredients(false)
     setCurrentOrderNumber('')
     setOrderError('')
     setIngredientList([])
@@ -179,6 +181,7 @@ export default function GreasyPOS() {
       setCurrentOrderNumber(orderNumber)
       setIngredientList(ingredients)
       setOrderComplete(true)
+      setShowIngredients(true)
       setOrderError('')
     } catch (error) {
       console.error(error)
@@ -339,10 +342,10 @@ export default function GreasyPOS() {
         </div>
       )}
 
-      {orderComplete && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setIngredientList([])}>
+      {showIngredients && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowIngredients(false)}>
           <section className="custom-item-modal ingredients-modal" role="dialog" aria-modal="true" aria-labelledby="ingredients-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setIngredientList([])} aria-label="Close ingredient list"><X size={20} /></button>
+            <button className="modal-close" onClick={() => setShowIngredients(false)} aria-label="Close ingredient list"><X size={20} /></button>
             <p className="eyebrow">Order #{currentOrderNumber}</p>
             <h2 id="ingredients-title">Ingredients needed</h2>
             <p className="modal-intro">Pull these ingredients for the order that was just charged.</p>
@@ -357,7 +360,7 @@ export default function GreasyPOS() {
               <div className="ingredient-empty" style={{ marginTop: '1.25rem' }}>No recipe ingredients are assigned to this custom item.</div>
             )}
 
-            <button className="custom-submit" type="button" onClick={() => setIngredientList([])} style={{ marginTop: '1.25rem' }}>
+            <button className="custom-submit" type="button" onClick={() => setShowIngredients(false)} style={{ marginTop: '1.25rem' }}>
               <Check size={19} /> Done
             </button>
           </section>
