@@ -142,6 +142,16 @@ export default function GreasyPOS() {
     setIngredientList([])
   }
 
+  const closeIngredients = () => {
+    setShowIngredients(false)
+    setOrderComplete(false)
+    setCurrentOrderNumber('')
+    setIngredientList([])
+    setCart({})
+    setCustomItems([])
+    setFirstResponderDiscount(false)
+  }
+
   const updateQuantity = (itemId: string, change: number) => {
     resetCompletedOrder()
     setCart((current) => {
@@ -342,9 +352,9 @@ export default function GreasyPOS() {
       )}
 
       {showIngredients && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowIngredients(false)}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeIngredients}>
           <section className="custom-item-modal ingredients-modal" role="dialog" aria-modal="true" aria-labelledby="ingredients-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowIngredients(false)} aria-label="Close ingredient list"><X size={20} /></button>
+            <button className="modal-close" onClick={closeIngredients} aria-label="Close ingredient list"><X size={20} /></button>
             <p className="eyebrow">Order #{currentOrderNumber}</p>
             <h2 id="ingredients-title">Ingredients needed</h2>
             <p className="modal-intro">Pull these ingredients for the order that was just charged.</p>
@@ -359,7 +369,7 @@ export default function GreasyPOS() {
               <div className="ingredient-empty" style={{ marginTop: '1.25rem' }}>No recipe ingredients are assigned to this custom item.</div>
             )}
 
-            <button className="custom-submit" type="button" onClick={() => setShowIngredients(false)} style={{ marginTop: '1.25rem' }}>
+            <button className="custom-submit" type="button" onClick={closeIngredients} style={{ marginTop: '1.25rem' }}>
               <Check size={19} /> Done
             </button>
           </section>
