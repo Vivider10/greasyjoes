@@ -1,16 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BadgeDollarSign,
-  Bell,
   Check,
-  ChefHat,
-  ChevronDown,
   Coffee,
   Eye,
   Grid2X2,
   Minus,
   Moon,
-  PackageCheck,
   Plus,
   PlusCircle,
   ReceiptText,
@@ -22,7 +18,7 @@ import {
   UtensilsCrossed,
   X,
 } from 'lucide-react'
-import { calculateIngredients } from '../lib/recipes'
+import { recipes } from '../lib/recipes'
 
 type Category = 'Food' | 'Drinks' | 'Dessert'
 type MenuFilter = 'All' | Category
@@ -37,16 +33,11 @@ type MenuItem = {
 
 type Cart = Record<string, number>
 
-type KitchenOrder = {
-  id: string
+type CompletedOrder = {
   orderNumber: string
   items: Array<{ id: string; name: string; price: number; quantity: number }>
-  subtotal: number
-  discount: number
   total: number
   firstResponder: boolean
-  status: 'pending' | 'preparing'
-  createdAt: string
 }
 
 const menuItems: MenuItem[] = [
@@ -79,33 +70,17 @@ const currency = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 })
 
-function playKitchenChime() {
-  try {
-    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioContextClass) return
-    const context = new AudioContextClass()
-    const now = context.currentTime
-    const first = context.createOscillator()
-    const second = context.createOscillator()
-    const gain = context.createGain()
-    first.type = 'sine'
-    second.type = 'sine'
-    first.frequency.setValueAtTime(660, now)
-    second.frequency.setValueAtTime(880, now + 0.12)
-    gain.gain.setValueAtTime(0.0001, now)
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42)
-    first.connect(gain)
-    second.connect(gain)
-    gain.connect(context.destination)
-    first.start(now)
-    second.start(now + 0.12)
-    first.stop(now + 0.43)
-    second.stop(now + 0.43)
-    window.setTimeout(() => void context.close(), 700)
-  } catch {
-    // Browsers can block audio until the user interacts with the page.
+function calculateOrderIngredients(items: Array<{ id: string; quantity: number }>) {
+  const totals: Record<string, number> = {}
+
+  for (const item of items) {
+    for (const ingredient of recipes[item.id] ?? []) {
+      totals[ingredient.ingredient] =
+        (totals[ingredient.ingredient] ?? 0) + ingredient.quantity * item.quantity
+    }
   }
+
+  return Object.entries(totals).sort(([a], [b]) => a.localeCompare(b))
 }
 
 export default function GreasyPOS() {
@@ -115,7 +90,6 @@ export default function GreasyPOS() {
   const [firstResponderDiscount, setFirstResponderDiscount] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [customItemOpen, setCustomItemOpen] = useState(false)
-  const [kitchenOpen, setKitchenOpen] = useState(false)
   const [customName, setCustomName] = useState('')
   const [customPrice, setCustomPrice] = useState('')
   const [customError, setCustomError] = useState('')
@@ -123,12 +97,7 @@ export default function GreasyPOS() {
   const [orderComplete, setOrderComplete] = useState(false)
   const [currentOrderNumber, setCurrentOrderNumber] = useState('')
   const [orderError, setOrderError] = useState('')
-  const [kitchenOrders, setKitchenOrders] = useState<KitchenOrder[]>([])
-  const [monthToDate, setMonthToDate] = useState(0)
-  const [kitchenLoading, setKitchenLoading] = useState(false)
-  const [kitchenToast, setKitchenToast] = useState('')
-  const knownOrderIds = useRef(new Set<string>())
-  const firstKitchenLoad = useRef(true)
+  const [ingredientList, setIngredientList] = useState<Array<[string, number]>>([])
 
   const catalog = useMemo(() => [...menuItems, ...customItems], [customItems])
   const cartItems = useMemo(
@@ -150,59 +119,26 @@ export default function GreasyPOS() {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const total = firstResponderDiscount ? Math.round(subtotal * 0.9) : subtotal
   const discountAmount = subtotal - total
-  const ingredients = useMemo(() => calculateIngredients(kitchenOrders), [kitchenOrders])
-
-  const resetCompletedOrder = () => {
-    setOrderComplete(false)
-    setCurrentOrderNumber('')
-    setOrderError('')
-  }
-
-  const closeCustomItem = () => {
-    setCustomItemOpen(false)
-    setCustomError('')
-  }
-
-  const fetchKitchen = async () => {
-    try {
-      const response = await fetch('/api/orders', { cache: 'no-store' })
-      if (!response.ok) throw new Error('Kitchen service unavailable')
-      const data = await response.json() as { orders: KitchenOrder[]; monthToDate: number }
-      const newOrders = data.orders.filter((order) => !knownOrderIds.current.has(order.id))
-
-      if (!firstKitchenLoad.current && newOrders.length > 0) {
-        playKitchenChime()
-        setKitchenToast(newOrders.length === 1 ? `NEW ORDER IN KITCHEN — #${newOrders[0].orderNumber}` : `${newOrders.length} NEW ORDERS IN KITCHEN`)
-        window.setTimeout(() => setKitchenToast(''), 4500)
-      }
-
-      for (const order of data.orders) knownOrderIds.current.add(order.id)
-      firstKitchenLoad.current = false
-      setKitchenOrders(data.orders)
-      setMonthToDate(Number(data.monthToDate ?? 0))
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  useEffect(() => {
-    void fetchKitchen()
-    const interval = window.setInterval(() => void fetchKitchen(), 3000)
-    return () => window.clearInterval(interval)
-  }, [])
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
         setCustomItemOpen(false)
-        setKitchenOpen(false)
+        setIngredientList([])
         setCustomError('')
       }
     }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [])
+
+  const resetCompletedOrder = () => {
+    setOrderComplete(false)
+    setCurrentOrderNumber('')
+    setOrderError('')
+    setIngredientList([])
+  }
 
   const updateQuantity = (itemId: string, change: number) => {
     resetCompletedOrder()
@@ -224,43 +160,29 @@ export default function GreasyPOS() {
     resetCompletedOrder()
   }
 
-  const completeOrder = async () => {
+  const completeOrder = () => {
     if (!itemCount || orderComplete) return
-    setOrderError('')
-    setKitchenLoading(true)
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstResponder: firstResponderDiscount,
-          items: cartItems.map(({ id, name, price, quantity }) => ({ id, name, price, quantity })),
-        }),
-      })
-      const data = await response.json() as { error?: string; order?: { orderNumber: string }; monthToDate?: number }
-      if (!response.ok || !data.order) throw new Error(data.error ?? 'Unable to send order to the kitchen.')
-      setOrderComplete(true)
-      setCurrentOrderNumber(data.order.orderNumber)
-      setMonthToDate(Number(data.monthToDate ?? monthToDate))
-      void fetchKitchen()
-    } catch (error) {
-      setOrderError(error instanceof Error ? error.message : 'Unable to send order to the kitchen.')
-    } finally {
-      setKitchenLoading(false)
-    }
-  }
 
-  const updateKitchenStatus = async (id: string, status: 'preparing' | 'ready') => {
     try {
-      const response = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      })
-      if (!response.ok) throw new Error('Could not update kitchen order')
-      void fetchKitchen()
+      const orderNumber = String(Math.floor(100000 + Math.random() * 900000))
+      const orderItems = cartItems.map(({ id, name, price, quantity }) => ({ id, name, price, quantity }))
+      const ingredients = calculateOrderIngredients(orderItems)
+      const completedOrder: CompletedOrder = {
+        orderNumber,
+        items: orderItems,
+        total,
+        firstResponder: firstResponderDiscount,
+      }
+
+      // Temporary local storage only. No API, database, Discord, or external service is used.
+      window.localStorage.setItem('greasy-joes-last-order', JSON.stringify(completedOrder))
+      setCurrentOrderNumber(orderNumber)
+      setIngredientList(ingredients)
+      setOrderComplete(true)
+      setOrderError('')
     } catch (error) {
       console.error(error)
+      setOrderError('Unable to complete the order on this device.')
     }
   }
 
@@ -300,10 +222,6 @@ export default function GreasyPOS() {
 
         <div className="header-actions">
           <div className="shift-status"><span className="status-light" />Register open</div>
-          <button className="kitchen-button" onClick={() => setKitchenOpen(true)} aria-label="Open kitchen">
-            <ChefHat size={18} /> KITCHEN
-            {kitchenOrders.length > 0 && <span className="kitchen-count">{kitchenOrders.length}</span>}
-          </button>
           <button className="theme-button" onClick={() => setDarkMode((current) => !current)} aria-pressed={darkMode}>
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             <span>{darkMode ? 'Day shift' : 'Night shift'}</span>
@@ -355,7 +273,7 @@ export default function GreasyPOS() {
             </div>
 
             {cartItems.length === 0 ? (
-              <div className="empty-order"><div className="empty-icon"><ReceiptText size={35} /></div><strong>Your counter is clear</strong><p>Tap a menu item to start the order.</p><ChevronDown size={20} className="mobile-only" /></div>
+              <div className="empty-order"><div className="empty-icon"><ReceiptText size={35} /></div><strong>Your counter is clear</strong><p>Tap a menu item to start the order.</p><span className="mobile-only"><RotateCcw size={20} /></span></div>
             ) : (
               <div className="receipt-items">
                 {cartItems.map((item) => (
@@ -384,20 +302,18 @@ export default function GreasyPOS() {
 
           {orderComplete ? (
             <div className="order-complete" role="status">
-              <span><Check size={25} /></span><div><strong>Sent to kitchen!</strong><small>Order #{currentOrderNumber} · {currency.format(total)} charged</small></div>
+              <span><Check size={25} /></span><div><strong>Order complete!</strong><small>Order #{currentOrderNumber} · {currency.format(total)}</small></div>
               <button onClick={clearOrder}><RotateCcw size={16} /> New</button>
             </div>
           ) : (
-            <button className="charge-button" onClick={() => void completeOrder()} disabled={!itemCount || kitchenLoading}>
-              <ShoppingBag size={21} />{kitchenLoading ? 'Sending…' : `Charge ${currency.format(total)}`}
+            <button className="charge-button" onClick={completeOrder} disabled={!itemCount}>
+              <ShoppingBag size={21} />{`Charge ${currency.format(total)}`}
             </button>
           )}
         </aside>
       </div>
 
       <footer className="pos-footer"><span>Greasy POS</span><span>Fast hands. Hot plates. Happy customers.</span></footer>
-
-      {kitchenToast && <div className="kitchen-toast" role="status"><Bell size={20} /><strong>{kitchenToast}</strong></div>}
 
       {menuOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setMenuOpen(false)}>
@@ -409,9 +325,9 @@ export default function GreasyPOS() {
       )}
 
       {customItemOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={closeCustomItem}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => { setCustomItemOpen(false); setCustomError('') }}>
           <div className="custom-item-modal" role="dialog" aria-modal="true" aria-labelledby="custom-item-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={closeCustomItem} aria-label="Close custom item form"><X size={20} /></button>
+            <button className="modal-close" onClick={() => { setCustomItemOpen(false); setCustomError('') }} aria-label="Close custom item form"><X size={20} /></button>
             <p className="eyebrow">Open price</p><h2 id="custom-item-title">Add a custom item</h2><p className="modal-intro">Add a one-off item directly to this order.</p>
             <form className="custom-item-form" onSubmit={addCustomItem}>
               <label>Item name<input autoFocus type="text" value={customName} onChange={(event) => { setCustomName(event.target.value); setCustomError('') }} maxLength={44} placeholder="Side of house sauce" /></label>
@@ -423,33 +339,27 @@ export default function GreasyPOS() {
         </div>
       )}
 
-      {kitchenOpen && (
-        <div className="modal-backdrop kitchen-backdrop" role="presentation" onMouseDown={() => setKitchenOpen(false)}>
-          <section className="kitchen-modal" role="dialog" aria-modal="true" aria-labelledby="kitchen-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="kitchen-heading">
-              <div><p className="eyebrow">Live production board</p><h2 id="kitchen-title"><ChefHat size={28} /> KITCHEN</h2></div>
-              <div className="kitchen-heading-stats"><span>{kitchenOrders.length} active</span><strong>{currency.format(monthToDate)} month-to-date</strong><button className="modal-close" onClick={() => setKitchenOpen(false)} aria-label="Close kitchen"><X size={20} /></button></div>
-            </div>
+      {orderComplete && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setIngredientList([])}>
+          <section className="custom-item-modal ingredients-modal" role="dialog" aria-modal="true" aria-labelledby="ingredients-title" onMouseDown={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIngredientList([])} aria-label="Close ingredient list"><X size={20} /></button>
+            <p className="eyebrow">Order #{currentOrderNumber}</p>
+            <h2 id="ingredients-title">Ingredients needed</h2>
+            <p className="modal-intro">Pull these ingredients for the order that was just charged.</p>
 
-            <div className="kitchen-grid">
-              <div className="kitchen-orders">
-                <div className="kitchen-subheading"><span>Orders</span><small>Updates every 3 seconds</small></div>
-                {kitchenOrders.length === 0 ? (
-                  <div className="kitchen-empty"><PackageCheck size={38} /><strong>Kitchen is clear</strong><p>New charged orders will appear here automatically.</p></div>
-                ) : kitchenOrders.map((order) => (
-                  <article className="kitchen-ticket" key={order.id}>
-                    <div className="kitchen-ticket-head"><strong>#{order.orderNumber}</strong><span>{new Date(order.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span></div>
-                    <div className="kitchen-ticket-items">{order.items.map((item) => <div key={`${order.id}-${item.id}`}><span>{item.quantity}× {item.name}</span><strong>{currency.format(item.price * item.quantity)}</strong></div>)}</div>
-                    <div className="kitchen-ticket-foot"><strong>{currency.format(order.total)}</strong><div><button onClick={() => void updateKitchenStatus(order.id, 'preparing')} disabled={order.status === 'preparing'}>{order.status === 'preparing' ? 'Preparing' : 'Start'}</button><button className="ready-button" onClick={() => void updateKitchenStatus(order.id, 'ready')}><Check size={15} /> Ready</button></div></div>
-                  </article>
+            {ingredientList.length > 0 ? (
+              <div className="ingredient-list" style={{ marginTop: '1.25rem' }}>
+                {ingredientList.map(([ingredient, quantity]) => (
+                  <div key={ingredient}><span>{ingredient}</span><strong>{quantity}</strong></div>
                 ))}
               </div>
+            ) : (
+              <div className="ingredient-empty" style={{ marginTop: '1.25rem' }}>No recipe ingredients are assigned to this custom item.</div>
+            )}
 
-              <aside className="ingredient-board">
-                <div className="kitchen-subheading"><span>Ingredients needed</span><small>Active orders only</small></div>
-                {ingredients.length === 0 ? <div className="ingredient-empty">No ingredients needed yet.</div> : <div className="ingredient-list">{ingredients.map(([ingredient, quantity]) => <div key={ingredient}><span>{ingredient}</span><strong>{quantity}</strong></div>)}</div>}
-              </aside>
-            </div>
+            <button className="custom-submit" type="button" onClick={() => setIngredientList([])} style={{ marginTop: '1.25rem' }}>
+              <Check size={19} /> Done
+            </button>
           </section>
         </div>
       )}
