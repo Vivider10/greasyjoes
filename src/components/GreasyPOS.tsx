@@ -306,7 +306,6 @@ export default function GreasyPOS() {
           {orderComplete ? (
             <div className="order-complete" role="status">
               <span><Check size={25} /></span><div><strong>Order complete!</strong><small>Order #{currentOrderNumber} · {currency.format(total)}</small></div>
-              <button onClick={clearOrder}><RotateCcw size={16} /> New</button>
             </div>
           ) : (
             <button className="charge-button" onClick={completeOrder} disabled={!itemCount}>
